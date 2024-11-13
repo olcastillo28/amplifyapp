@@ -1,0 +1,174 @@
+/*
+This document is the evidence of HTMl and CSS training from UDEMY
+10/22/2024. Objects properties, working with boxes  
+*/
+
+img {
+  border-radius: 20px;
+  padding: auto;
+  display: inline-block;
+}
+
+.box
+{
+  display: inline-block;
+  margin: 5px;
+  border: 5px solid red;
+  height: 300px;
+  width: 400px;
+  padding: 30px;
+  box-sizing: content-box;
+}
+
+/* Outlines and borders*/
+
+.box1
+{
+  border: 5px solid red;
+  height: 400px;
+  width: 400px;
+  outline: 5px solid black;
+  outline-offset: 20px;
+  box-sizing: content-box;
+  margin: 30px;
+}
+    
+/* Text Shadows */
+
+.font1
+{
+  font-size: 12px;
+  padding: 15px;
+}
+
+
+/* Forcing a minimum size for an object */
+
+.box3
+{
+  border: 4px solid blue;
+  display: inline-block;
+  max-width: 600px;
+  box-sizing: border-box;
+}
+
+/* Introduction CSS positions */
+
+.box4
+{
+  font-size: 14;
+  background-color: white;
+  border-bottom: 2px solid #ccc;
+  padding: 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: sticky;
+}
+
+/* Relative positioning */
+
+.box5
+{
+  font-size: 14;
+  border: 5px solid black;
+  position: absolute;
+  bottom: 0px;
+  right: 0;
+}
+
+/* Absolute positioning */
+
+.box6
+{
+  width: 300;
+  height: 300;
+  font-size: 14;
+  background-color: white;
+  border: 5px solid black;
+  position: relative;
+  top: 20;
+  left: 20;
+
+}
+
+
+/* Sticky positioning like modern Headers */
+
+.box7
+{
+  position: sticky;
+  color: aliceblue;
+  background-color: #2d2d2d;
+  padding: 10px;
+  top: 0;
+}
+
+/* Fixed positioning like Headers */
+
+.box8
+{
+  background-color: #afafaf;
+  padding: 10px;
+  bottom: 0px;
+}
+
+/* Controlling Overflowing Text */
+
+.box9
+{
+  width: 500;
+  height: 500;
+  overflow: visible;
+}
+
+/* Centering Elements in the middle of the block */
+
+.box10
+{
+  height: 10px;
+  overflow: visible;
+  border: 1px solid black;
+}
+
+/* Advanced CSS Selectors */
+
+.box11
+{
+  overflow: visible;
+  border: 2px blue solid;
+  margin-left: auto;
+}
+
+/* Intrcoduction to pseudo selectors */
+
+#parent .box10
+{
+  overflow: visible;
+  border: 2px blue solid;
+  margin-left: auto;
+}
+
+.box10:hover{
+  background-color: gray;
+}
+
+.p::first-letter{
+  font-size: 40;
+  margin: 5px;
+}
+
+/* Custom fonts on documents*/
+
+body{
+  font-size: 45px, ´Courier´, 'cursive';
+}
+
+.pacifico-regular {
+  font-family: "Pacifico", 'cursive';
+  font-weight: 400;
+  font-style: normal;
+  font-size: 15px;
+}
+

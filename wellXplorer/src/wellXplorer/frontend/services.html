@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wireline Log Visualization</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
+    <style>
+        /* Body */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #121212;
+            color: white;
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Container - Controls and Chart */
+        .container {
+            display: grid;
+            grid-template-columns: 250px 1fr; /* Sidebar for controls + Chart */
+            grid-template-rows: 1fr;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Controls Panel */
+        .controls {
+            background-color: #1f1f1f;
+            padding: 20px;
+            border-right: 2px solid #333;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            height: 100%;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .controls h3 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 0;
+            padding-bottom: 15px;
+            color: #fff;
+            border-bottom: 2px solid #444;
+        }
+
+        /* Control Section Styling */
+        .section {
+            margin-top: 20px;
+        }
+
+        .section label {
+            font-size: 1rem;
+            margin-bottom: 5px;
+            color: #ddd;
+            font-weight: normal;
+        }
+
+        /* Input Fields and Buttons */
+        .form-container input,
+        .form-container select,
+        .form-container button {
+            padding: 10px;
+            width: 100%;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            color: #fff;
+            background-color: #333;
+            font-size: 1rem;
+        }
+
+        /* Input Color Pickers */
+        .form-container input[type="color"] {
+            padding: 0;
+            width: 60px;
+            height: 30px;
+            border: none;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .form-container button {
+            cursor: pointer;
+            background-color: #007bff;
+            border: none;
+            font-weight: bold;
+        }
+
+        .form-container button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Hover effect on inputs */
+        .form-container input:focus,
+        .form-container select:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .form-container button:focus {
+            outline: none;
+        }
+
+        /* Responsive layout for chart controls */
+        .chart-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .chart-controls button {
+            background-color: #28a745;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .chart-controls button:hover {
+            background-color: #218838;
+        }
+
+        /* Chart container styling */
+        #chart-container {
+            grid-column: 2 / 3;
+            grid-row: 1 / 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: auto;
+            position: relative;
+            background-color: #121212;
+        }
+
+        #plotly-chart {
+            width: 100%;
+            height: 100%;
+            resize: both;
+            overflow: auto;
+            position: relative;
+        }
+
+        /* Error message style */
+        #error-message {
+            color: red;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        /* Draggable Panel Styling */
+        .draggable {
+            position: absolute;
+            cursor: grab;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Controls Panel -->
+    <div class="controls">
+        <h3>Wireline Log Controls</h3>
+        
+        <!-- File Upload Section -->
+        <div class="section">
+            <label for="excelFile">Upload Excel File:</label>
+            <input type="file" id="excelFile" />
+            <button id="loadButton">Load Excel Data</button>
+        </div>
+
+        <!-- Y-Axis Settings Section -->
+        <div class="section">
+            <h4>Y-Axis Settings</h4>
+            <label for="minDepth">Min Depth (ft):</label>
+            <input type="number" id="minDepth" value="0" />
+            <label for="maxDepth">Max Depth (ft):</label>
+            <input type="number" id="maxDepth" value="10000" />
+        </div>
+
+        <!-- Chart Controls Section -->
+        <div class="chart-controls">
+            <button id="updateChartBtn">Update Chart</button>
+            <button id="resetChartBtn">Reset Chart</button>
+        </div>
+
+    </div>
+
+    <!-- Chart Area -->
+    <div id="chart-container">
+        <div id="plotly-chart" class="draggable"></div>
+    </div>
+</div>
+
+<script>
+// Global variables to hold data and configuration
+let plotData = [];
+let plotLayout = {};
+let depth = [];
+let logData = []; // Array to store data for multiple curves
+
+// Function to update the wireline log plot with dynamic N curves from Excel
+function updateWirelineLogPlot() {
+    const markerSize = parseInt(document.getElementById('markerSize').value, 10);
+    const minDepth = parseFloat(document.getElementById('minDepth').value);
+    const maxDepth = parseFloat(document.getElementById('maxDepth').value);
+
+    // Create traces for each curve dynamically based on the logData array
+    let traces = [];
+    for (let i = 0; i < logData.length; i++) {
+        traces.push({
+            type: 'scatter',
+            mode: 'lines+markers',
+            x: logData[i].data, // Data for the current curve
+            y: depth,
+            line: { width: 2, shape: 'spline' },  // Spline interpolation for smooth curves
+            marker: { size: markerSize },
+            name: `Curve ${i + 1}`, // Naming curves dynamically
+        });
+    }
+
+    // Set up the layout for the plot
+    plotLayout = {
+        title: 'Wireline Log Plot',
+        xaxis: {
+            title: 'Log Data',
+            showgrid: true
+        },
+        yaxis: {
+            title: 'Depth (ft)',
+            autorange: 'reversed',  // Depth increases downwards
+            range: [maxDepth, minDepth],
+            showgrid: true
+        },
+        showlegend: true,
+        height: 600,
+        margin: { t: 50, r: 50, b: 50, l: 50 },
+    };
+
+    Plotly.newPlot('plotly-chart', traces, plotLayout);
+}
+
+// Event listener to handle file input and load the Excel data
+document.getElementById('loadButton').addEventListener('click', function () {
+    const fileInput = document.getElementById('excelFile');
+    const file = fileInput.files[0];
+
+    if (!file) {
+        alert("Please select an Excel file to load.");
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const data = e.target.result;
+        const workbook = XLSX.read(data, { type: 'binary' });
+
+        // Assuming the first sheet contains the log data
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+        // Parse data for plotting
+        depth = json.map(row => row[0]);  // First column is assumed to be depth
+        logData = [];
+
+        // Dynamically create logData for multiple curves (every subsequent column after depth)
+        for (let i = 1; i < json[0].length; i++) {
+            let curveData = json.map(row => row[i]);
+            logData.push({ data: curveData });
+        }
+
+        // Update the chart with the newly loaded data
+        updateWirelineLogPlot();
+    };
+
+    reader.readAsBinaryString(file);
+});
+
+// Event listeners for buttons to update or reset the chart
+document.getElementById('updateChartBtn').addEventListener('click', function () {
+    updateWirelineLogPlot();
+});
+
+document.getElementById('resetChartBtn').addEventListener('click', function () {
+    // Reset all controls to their default values
+    document.getElementById('minDepth').value = 0;
+    document.getElementById('maxDepth').value = 10000;
+
+    // Reset the plot data
+    depth = [];
+    logData = [];
+
+    // Clear the plot
+    Plotly.newPlot('plotly-chart', [], plotLayout);
+});
+</script>
+
+</body>
+</html>
